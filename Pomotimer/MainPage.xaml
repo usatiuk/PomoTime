@@ -12,6 +12,7 @@
 
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:FormatStringConverter x:Key="FormatStringConverter" />
         <converters:BoolToObjectConverter
             x:Key="BoolToWorkRestConverter"
             FalseValue="Work"
@@ -44,7 +45,7 @@
                         x:Name="MinutesText"
                         FontSize="60"
                         FontWeight="Bold"
-                        Text="{x:Bind runningState.MinutesLeft, Mode=OneWay}" />
+                        Text="{x:Bind runningState.MinutesLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
                     <Run
                         x:Name="Separator"
                         FontSize="30"
@@ -54,7 +55,7 @@
                         x:Name="SecondsText"
                         FontSize="30"
                         FontWeight="SemiBold"
-                        Text="{x:Bind runningState.SecondsLeft, Mode=OneWay}" />
+                        Text="{x:Bind runningState.SecondsLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
                 </Paragraph>
             </RichTextBlock>
             <TextBlock
