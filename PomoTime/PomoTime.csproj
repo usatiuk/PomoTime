@@ -7,8 +7,8 @@
     <ProjectGuid>{C0132E9B-1131-4B80-A865-63242012F6BE}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Pomotimer</RootNamespace>
-    <AssemblyName>Pomotimer</AssemblyName>
+    <RootNamespace>PomoTime</RootNamespace>
+    <AssemblyName>PomoTime</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>

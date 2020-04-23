@@ -14,7 +14,7 @@
   <mp:PhoneIdentity PhoneProductId="a319d025-fb42-4a0e-96b6-7d2548ef29b7" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Pomotimer</DisplayName>
+    <DisplayName>PomoTime</DisplayName>
     <PublisherDisplayName>stepu</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
