@@ -3,11 +3,20 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:converters="using:Microsoft.Toolkit.Uwp.UI.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Pomotimer"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:BoolToObjectConverter
+            x:Key="BoolToWorkRestConverter"
+            FalseValue="Work"
+            TrueValue="Rest" />
+    </Page.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
@@ -18,16 +27,44 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" Grid.Column="0">
-            <RichTextBlock HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <RichTextBlock
+                Grid.Row="0"
+                Grid.Column="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom">
                 <Paragraph>
-                    <Run FontSize="60" FontWeight="Bold">
-                        40
-                    </Run>
-                    <Run FontSize="30" FontWeight="SemiBold">
-                        :00
-                    </Run>
+                    <Run
+                        x:Name="MinutesText"
+                        FontSize="60"
+                        FontWeight="Bold"
+                        Text="{x:Bind runningState.MinutesLeft, Mode=OneWay}" />
+                    <Run
+                        x:Name="Separator"
+                        FontSize="30"
+                        FontWeight="SemiBold"
+                        Text=":" />
+                    <Run
+                        x:Name="SecondsText"
+                        FontSize="30"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind runningState.SecondsLeft, Mode=OneWay}" />
                 </Paragraph>
             </RichTextBlock>
+            <TextBlock
+                Grid.Row="1"
+                Grid.Column="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                FontSize="30"
+                FontWeight="Light"
+                Text="{x:Bind runningState.OnRest, Converter={StaticResource BoolToWorkRestConverter}, Mode=OneWay}" />
         </Grid>
         <Grid Grid.Row="0" Grid.Column="1">
             <Grid>
@@ -49,7 +86,7 @@
                     Minimum="0"
                     SmallChange="5"
                     SpinButtonPlacementMode="Inline"
-                    Value="40" />
+                    Value="{x:Bind WorkMinutes, Mode=TwoWay}" />
                 <controls:NumberBox
                     x:Name="RestMinutesInput"
                     Grid.Row="1"
@@ -61,7 +98,7 @@
                     Minimum="0"
                     SmallChange="1"
                     SpinButtonPlacementMode="Inline"
-                    Value="5" />
+                    Value="{x:Bind RestMinutes, Mode=TwoWay}" />
             </Grid>
         </Grid>
     </Grid>
@@ -71,20 +108,38 @@
             DefaultLabelPosition="Right"
             IsOpen="True">
             <AppBarButton
+                x:Name="PlayButton"
+                Click="PlayButton_Click"
                 Icon="Play"
                 Label="Start"
-                Visibility="Visible" />
+                Visibility="{x:Bind runningState.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay, ConverterParameter=True}" />
             <AppBarButton
+                x:Name="PauseButton"
+                Click="PauseButton_Click"
                 Icon="Pause"
                 Label="Pause"
-                Visibility="Collapsed" />
+                Visibility="{x:Bind runningState.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
             <AppBarButton
+                x:Name="ResetButton"
+                Click="ResetButton_Click"
                 Icon="Redo"
                 Label="Reset"
-                Visibility="Collapsed" />
-            <AppBarButton Icon="Add" Label="+1min" />
-            <AppBarButton Icon="Add" Label="+5min" />
-            <AppBarButton Icon="Add" Label="+10min" />
+                Visibility="Visible" />
+            <AppBarButton
+                x:Name="Plus1Button"
+                Click="Plus1Button_Click"
+                Icon="Add"
+                Label="+1min" />
+            <AppBarButton
+                x:Name="Plus5Button"
+                Click="Plus5Button_Click"
+                Icon="Add"
+                Label="+5min" />
+            <AppBarButton
+                x:Name="Plus10Button"
+                Click="Plus10Button_Click"
+                Icon="Add"
+                Label="+10min" />
         </CommandBar>
     </Page.BottomAppBar>
 </Page>
