@@ -35,9 +35,20 @@ namespace PomoTime
         private const int DefaultWorkMinutes = 25;
         private const int DefaultLongBreakMinutes = 15;
 
-
+        private int _work_minutes;
         private int BreakMinutes { get; set; }
-        private int WorkMinutes { get; set; }
+        private int WorkMinutes
+        {
+            get { return _work_minutes; }
+            set
+            {
+                if (!runningState.IsRunning && runningState.CurrentPeriod == Period.Work)
+                {
+                    runningState.MinutesLeft = value;
+                }
+                _work_minutes = value;
+            }
+        }
         private int LongBreakMinutes { get; set; }
 
 
