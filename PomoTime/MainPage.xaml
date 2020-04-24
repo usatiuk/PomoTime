@@ -13,10 +13,7 @@
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:FormatStringConverter x:Key="FormatStringConverter" />
-        <converters:BoolToObjectConverter
-            x:Key="BoolToWorkRestConverter"
-            FalseValue="Work"
-            TrueValue="Rest" />
+        <local:PeriodToStringConverter x:Key="PeriodToStringConverter" />
     </Page.Resources>
 
     <Grid>
@@ -65,11 +62,12 @@
                 VerticalAlignment="Top"
                 FontSize="30"
                 FontWeight="Light"
-                Text="{x:Bind runningState.OnRest, Converter={StaticResource BoolToWorkRestConverter}, Mode=OneWay}" />
+                Text="{x:Bind runningState.CurrentPeriod, Converter={StaticResource PeriodToStringConverter}, Mode=OneWay}" />
         </Grid>
         <Grid Grid.Row="0" Grid.Column="1">
             <Grid>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
@@ -89,17 +87,29 @@
                     SpinButtonPlacementMode="Inline"
                     Value="{x:Bind WorkMinutes, Mode=TwoWay}" />
                 <controls:NumberBox
-                    x:Name="RestMinutesInput"
+                    x:Name="BreakMinutesInput"
                     Grid.Row="1"
                     Grid.Column="0"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Header="Rest time:"
+                    Header="Break time:"
                     LargeChange="5"
                     Minimum="0"
                     SmallChange="1"
                     SpinButtonPlacementMode="Inline"
-                    Value="{x:Bind RestMinutes, Mode=TwoWay}" />
+                    Value="{x:Bind BreakMinutes, Mode=TwoWay}" />
+                <controls:NumberBox
+                    x:Name="LongBreakMinutesInput"
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Header="Long break time:"
+                    LargeChange="15"
+                    Minimum="0"
+                    SmallChange="5"
+                    SpinButtonPlacementMode="Inline"
+                    Value="{x:Bind LongBreakMinutes, Mode=TwoWay}" />
             </Grid>
         </Grid>
     </Grid>
