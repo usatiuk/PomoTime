@@ -15,6 +15,8 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.Storage;
+using Windows.System.Threading;
+using Windows.UI.Core;
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -26,11 +28,16 @@ namespace PomoTime
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private DispatcherTimer dispatcherTimer;
         public RunningState runningState = new RunningState();
+        private const int DefaultBreakMinutes = 5;
+        private const int DefaultWorkMinutes = 25;
+        private const int DefaultLongBreakMinutes = 15;
 
-        private int RestMinutes { get; set; }
+
+        private int BreakMinutes { get; set; }
         private int WorkMinutes { get; set; }
+        private int LongBreakMinutes { get; set; }
+
 
         public MainPage()
         {
@@ -50,44 +57,84 @@ namespace PomoTime
             Windows.Storage.ApplicationDataCompositeValue minutes = (ApplicationDataCompositeValue)roamingSettings.Values["Minutes"];
             if (minutes != null)
             {
-                WorkMinutes = (int)minutes["WorkMinutes"];
-                RestMinutes = (int)minutes["RestMinutes"];
+                if (minutes["WorkMinutes"] != null)
+                {
+                    WorkMinutes = (int)minutes["WorkMinutes"];
+                }
+                else
+                {
+                    WorkMinutes = DefaultWorkMinutes;
+                }
+                if (minutes["BreakMinutes"] != null)
+                {
+                    BreakMinutes = (int)minutes["BreakMinutes"];
+                }
+                else
+                {
+                    BreakMinutes = DefaultBreakMinutes;
+                }
+                if (minutes["LongBreakMinutes"] != null)
+                {
+                    LongBreakMinutes = (int)minutes["LongBreakMinutes"];
+                }
+                else
+                {
+                    LongBreakMinutes = DefaultLongBreakMinutes;
+                }
             }
             else
             {
                 // Some maigc defualt numbers
-                WorkMinutes = 40;
-                RestMinutes = 5;
+                WorkMinutes = DefaultWorkMinutes;
+                BreakMinutes = DefaultBreakMinutes;
+                LongBreakMinutes = DefaultLongBreakMinutes;
             }
             runningState.MinutesLeft = WorkMinutes;
             runningState.SecondsLeft = 0;
 
         }
-        public void DispatcherTimerSetup()
-        {
-            dispatcherTimer = new DispatcherTimer();
-            dispatcherTimer.Tick += dispatcherTimer_Tick;
-            dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
-        }
 
-        void dispatcherTimer_Tick(object sender, object e)
+        void timer_Tick()
         {
+            if (!runningState.IsRunning)
+            {
+                return;
+            }
             if (runningState.SecondsLeft == 0)
             {
                 runningState.SecondsLeft = 59;
                 if (runningState.MinutesLeft == 0)
                 {
-                    if (runningState.OnRest)
+                    switch (runningState.CurrentPeriod)
                     {
-                        runningState.OnRest = false;
-                        runningState.MinutesLeft = WorkMinutes;
-                        runningState.SecondsLeft = 0;
-                    }
-                    else
-                    {
-                        runningState.OnRest = true;
-                        runningState.MinutesLeft = RestMinutes;
-                        runningState.SecondsLeft = 0;
+                        case Period.Work:
+                            if (runningState.PreviousShortBreaks != 4)
+                            {
+                                runningState.CurrentPeriod = Period.ShortBreak;
+                                runningState.MinutesLeft = BreakMinutes;
+                            }
+                            else
+                            {
+                                runningState.CurrentPeriod = Period.LongBreak;
+                                runningState.MinutesLeft = LongBreakMinutes;
+                            }
+                            runningState.SecondsLeft = 0;
+
+                            break;
+                        case Period.ShortBreak:
+                            runningState.CurrentPeriod = Period.Work;
+                            runningState.PreviousShortBreaks += 1;
+                            runningState.MinutesLeft = WorkMinutes;
+                            runningState.SecondsLeft = 0;
+                            break;
+                        case Period.LongBreak:
+                            runningState.CurrentPeriod = Period.Work;
+                            runningState.PreviousShortBreaks = 0;
+                            runningState.MinutesLeft = WorkMinutes;
+                            runningState.SecondsLeft = 0;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
                 else
@@ -105,24 +152,21 @@ namespace PomoTime
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            dispatcherTimer.Start();
             runningState.IsRunning = true;
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            dispatcherTimer.Stop();
             runningState.IsRunning = false;
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            dispatcherTimer.Stop();
             runningState.IsRunning = false;
 
-            runningState.OnRest = false;
+            runningState.CurrentPeriod = Period.Work;
             runningState.MinutesLeft = WorkMinutes;
             runningState.SecondsLeft = 0;
         }
@@ -150,14 +194,22 @@ namespace PomoTime
             ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
             Windows.Storage.ApplicationDataCompositeValue minutes = new Windows.Storage.ApplicationDataCompositeValue();
             minutes["WorkMinutes"] = WorkMinutes;
-            minutes["RestMinutes"] = RestMinutes;
+            minutes["BreakMinutes"] = BreakMinutes;
+            minutes["LongBreakMinutes"] = LongBreakMinutes;
             roamingSettings.Values["Minutes"] = minutes;
             deferral.Complete();
         }
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
         {
-            DispatcherTimerSetup();
+            ThreadPoolTimer timer = ThreadPoolTimer.CreatePeriodicTimer(async (t) =>
+            {
+                await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    timer_Tick();
+                });
+            }, TimeSpan.FromSeconds(1));
         }
     }
 }

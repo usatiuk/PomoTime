@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 
 namespace PomoTime
 {
+    public enum Period
+    {
+        Work, ShortBreak, LongBreak
+    }
     public class RunningState : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -52,17 +56,31 @@ namespace PomoTime
 
         }
 
-        public bool _on_rest;
+        public Period _period;
 
-        public bool OnRest
+        public Period CurrentPeriod
         {
-            get { return _on_rest; }
+            get { return _period; }
             set
             {
-                _on_rest = value;
-                NotifyPropertyChanged("OnRest");
+                _period = value;
+                NotifyPropertyChanged("CurrentPeriod");
             }
 
         }
+
+        public int _previous_short_breaks;
+
+        public int PreviousShortBreaks
+        {
+            get { return _previous_short_breaks; }
+            set
+            {
+                _previous_short_breaks = value;
+                NotifyPropertyChanged("PreviousShortBreaks");
+            }
+        }
     }
+
+
 }
