@@ -32,8 +32,7 @@ namespace PomoTime
                     output = "Work";
                     break;
                 default:
-                    output = "Something wrong";
-                    break;
+                    throw new ArgumentOutOfRangeException();
             }
 
             // Return the month value to pass to the target.

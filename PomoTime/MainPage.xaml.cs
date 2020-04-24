@@ -17,6 +17,8 @@ using Windows.UI.Xaml.Navigation;
 using Windows.Storage;
 using Windows.System.Threading;
 using Windows.UI.Core;
+using Microsoft.Toolkit.Uwp.Notifications;
+using Windows.UI.Notifications;
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -136,6 +138,7 @@ namespace PomoTime
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
+                    SendToast();
                 }
                 else
                 {
@@ -146,6 +149,48 @@ namespace PomoTime
             {
                 runningState.SecondsLeft--;
             }
+        }
+
+        void SendToast()
+        {
+            string header;
+            switch (runningState.CurrentPeriod)
+            {
+                case Period.LongBreak:
+                    header = "Long break time!";
+                    break;
+                case Period.ShortBreak:
+                    header = "Short break time!";
+                    break;
+                case Period.Work:
+                    header = "Work time!";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            ToastVisual visual = new ToastVisual()
+            {
+                BindingGeneric = new ToastBindingGeneric()
+                {
+                    Children =
+                    {
+                        new AdaptiveText()
+                        {
+                            Text = header
+                        },
+                    },
+
+                }
+            };
+
+            ToastContent toastContent = new ToastContent()
+            {
+                Visual = visual,
+            };
+
+            var toast = new ToastNotification(toastContent.GetXml());
+            toast.ExpirationTime = DateTime.Now.AddMinutes(runningState.MinutesLeft);
+            ToastNotificationManager.CreateToastNotifier().Show(toast);
         }
 
 
