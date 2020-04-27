@@ -14,11 +14,11 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Windows.UI.Notifications;
 using Windows.Storage;
 using Windows.System.Threading;
 using Windows.UI.Core;
 using Microsoft.Toolkit.Uwp.Notifications;
-using Windows.UI.Notifications;
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -30,11 +30,12 @@ namespace PomoTime
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        public RunningState runningState = new RunningState();
+        public RunningState MainViewRunningState = new RunningState();
         private const int DefaultBreakMinutes = 5;
         private const int DefaultWorkMinutes = 25;
         private const int DefaultLongBreakMinutes = 15;
 
+        private DateTime SuspendTime;
         private int _work_minutes;
         private int BreakMinutes { get; set; }
         private int WorkMinutes
@@ -42,9 +43,9 @@ namespace PomoTime
             get { return _work_minutes; }
             set
             {
-                if (!runningState.IsRunning && runningState.CurrentPeriod == Period.Work)
+                if (!MainViewRunningState.IsRunning && MainViewRunningState.CurrentPeriod == Period.Work)
                 {
-                    runningState.MinutesLeft = value;
+                    MainViewRunningState.MinutesLeft = value;
                 }
                 _work_minutes = value;
             }
@@ -64,6 +65,7 @@ namespace PomoTime
             ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 
             Application.Current.Suspending += OnSuspending;
+            Application.Current.Resuming += OnResuming;
             this.Loaded += MainPageLoaded;
 
             ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
@@ -102,79 +104,85 @@ namespace PomoTime
                 BreakMinutes = DefaultBreakMinutes;
                 LongBreakMinutes = DefaultLongBreakMinutes;
             }
-            runningState.MinutesLeft = WorkMinutes;
-            runningState.SecondsLeft = 0;
+            MainViewRunningState.MinutesLeft = WorkMinutes;
+            MainViewRunningState.SecondsLeft = 0;
 
         }
 
         void timer_Tick()
         {
-            if (!runningState.IsRunning)
+            if (!MainViewRunningState.IsRunning)
             {
                 return;
             }
-            if (runningState.SecondsLeft == 0)
+            if (MainViewRunningState.SecondsLeft == 0)
             {
-                runningState.SecondsLeft = 59;
-                if (runningState.MinutesLeft == 0)
+                MainViewRunningState.SecondsLeft = 59;
+                if (MainViewRunningState.MinutesLeft == 0)
                 {
-                    switch (runningState.CurrentPeriod)
+                    switch (MainViewRunningState.CurrentPeriod)
                     {
                         case Period.Work:
-                            if (runningState.PreviousShortBreaks != 4)
+                            if (MainViewRunningState.PreviousShortBreaks != 4)
                             {
-                                runningState.CurrentPeriod = Period.ShortBreak;
-                                runningState.MinutesLeft = BreakMinutes;
+                                MainViewRunningState.CurrentPeriod = Period.ShortBreak;
+                                MainViewRunningState.MinutesLeft = BreakMinutes;
                             }
                             else
                             {
-                                runningState.CurrentPeriod = Period.LongBreak;
-                                runningState.MinutesLeft = LongBreakMinutes;
+                                MainViewRunningState.CurrentPeriod = Period.LongBreak;
+                                MainViewRunningState.MinutesLeft = LongBreakMinutes;
                             }
-                            runningState.SecondsLeft = 0;
+                            MainViewRunningState.SecondsLeft = 0;
 
                             break;
                         case Period.ShortBreak:
-                            runningState.CurrentPeriod = Period.Work;
-                            runningState.PreviousShortBreaks += 1;
-                            runningState.MinutesLeft = WorkMinutes;
-                            runningState.SecondsLeft = 0;
+                            MainViewRunningState.CurrentPeriod = Period.Work;
+                            MainViewRunningState.PreviousShortBreaks += 1;
+                            MainViewRunningState.MinutesLeft = WorkMinutes;
+                            MainViewRunningState.SecondsLeft = 0;
                             break;
                         case Period.LongBreak:
-                            runningState.CurrentPeriod = Period.Work;
-                            runningState.PreviousShortBreaks = 0;
-                            runningState.MinutesLeft = WorkMinutes;
-                            runningState.SecondsLeft = 0;
+                            MainViewRunningState.CurrentPeriod = Period.Work;
+                            MainViewRunningState.PreviousShortBreaks = 0;
+                            MainViewRunningState.MinutesLeft = WorkMinutes;
+                            MainViewRunningState.SecondsLeft = 0;
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
-                    SendToast();
+                    SchedulePeriodOverNotification();
                 }
                 else
                 {
-                    runningState.MinutesLeft--;
+                    MainViewRunningState.MinutesLeft--;
                 }
+            }
+            else if (MainViewRunningState.SecondsLeft == 1 && MainViewRunningState.MinutesLeft == 0)
+            {
+                MainViewRunningState.IsRunning = false;
+                MainViewRunningState.SecondsLeft--;
+                SchedulePeriodOverNotification();
             }
             else
             {
-                runningState.SecondsLeft--;
+                MainViewRunningState.SecondsLeft--;
             }
         }
 
-        void SendToast()
+        void SchedulePeriodOverNotification()
         {
             string header;
-            switch (runningState.CurrentPeriod)
+            switch (MainViewRunningState.CurrentPeriod)
             {
                 case Period.LongBreak:
-                    header = "Long break time!";
+                    header = "Long break time over!";
                     break;
                 case Period.ShortBreak:
-                    header = "Short break time!";
+                    header = "Short break time over!";
                     break;
                 case Period.Work:
-                    header = "Work time!";
+                    header = "Work time over!";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -199,50 +207,69 @@ namespace PomoTime
                 Visual = visual,
             };
 
-            var toast = new ToastNotification(toastContent.GetXml());
-            toast.ExpirationTime = DateTime.Now.AddMinutes(runningState.MinutesLeft);
-            ToastNotificationManager.CreateToastNotifier().Show(toast);
+            TimeSpan WaitTime = new TimeSpan(0, MainViewRunningState.MinutesLeft, MainViewRunningState.SecondsLeft);
+            var toast = new Windows.UI.Notifications.ScheduledToastNotification(toastContent.GetXml(), DateTime.Now + WaitTime);
+            Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().AddToSchedule(toast);
+        }
+
+        private void ClearScheduledNotifications()
+        {
+            ToastNotifier notifier = ToastNotificationManager.CreateToastNotifier();
+            IReadOnlyList<ScheduledToastNotification> scheduledToasts = notifier.GetScheduledToastNotifications();
+            foreach (ScheduledToastNotification n in scheduledToasts)
+            {
+                notifier.RemoveFromSchedule(n);
+            }
         }
 
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            runningState.IsRunning = true;
+            MainViewRunningState.IsRunning = true;
+
+            if(MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
+            {
+                SchedulePeriodOverNotification();
+            }
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            runningState.IsRunning = false;
+            MainViewRunningState.IsRunning = false;
+
+            ClearScheduledNotifications();
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            runningState.IsRunning = false;
+            MainViewRunningState.IsRunning = false;
 
-            runningState.CurrentPeriod = Period.Work;
-            runningState.MinutesLeft = WorkMinutes;
-            runningState.SecondsLeft = 0;
+            MainViewRunningState.CurrentPeriod = Period.Work;
+            MainViewRunningState.MinutesLeft = WorkMinutes;
+            MainViewRunningState.SecondsLeft = 0;
+
+            ClearScheduledNotifications();
         }
 
         private void Plus1Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            runningState.MinutesLeft += 1;
+            MainViewRunningState.MinutesLeft += 1;
         }
 
         private void Plus5Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            runningState.MinutesLeft += 5;
+            MainViewRunningState.MinutesLeft += 5;
         }
 
         private void Plus10Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            runningState.MinutesLeft += 10;
+            MainViewRunningState.MinutesLeft += 10;
         }
         private void OnSuspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
@@ -253,18 +280,46 @@ namespace PomoTime
             minutes["BreakMinutes"] = BreakMinutes;
             minutes["LongBreakMinutes"] = LongBreakMinutes;
             roamingSettings.Values["Minutes"] = minutes;
+
+            SuspendTime = DateTime.Now;
             deferral.Complete();
+        }
+
+        private void OnResuming(object sender, Object e)
+        {
+            TimeSpan TimeFromSuspend = DateTime.Now - SuspendTime;
+            if(!MainViewRunningState.IsRunning)
+            {
+                return;
+            }
+            if(TimeFromSuspend.TotalSeconds >= MainViewRunningState.MinutesLeft * 60 + MainViewRunningState.SecondsLeft)
+            {
+                MainViewRunningState.IsRunning = false;
+                MainViewRunningState.MinutesLeft = 0;
+                MainViewRunningState.SecondsLeft = 0;
+                return;
+            }
+
+            if(TimeFromSuspend.Seconds > MainViewRunningState.SecondsLeft)
+            {
+                MainViewRunningState.MinutesLeft -= TimeFromSuspend.Minutes + 1;
+                MainViewRunningState.SecondsLeft = MainViewRunningState.SecondsLeft + 60 - TimeFromSuspend.Seconds;
+                return;
+            }
+
+            MainViewRunningState.MinutesLeft -= TimeFromSuspend.Minutes;
+            MainViewRunningState.SecondsLeft -= TimeFromSuspend.Seconds;
         }
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
         {
             ThreadPoolTimer timer = ThreadPoolTimer.CreatePeriodicTimer(async (t) =>
             {
-                await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-                () =>
-                {
-                    timer_Tick();
-                });
+                await Dispatcher.RunAsync(CoreDispatcherPriority.High,
+                    () =>
+                         {
+                             timer_Tick();
+                         });
             }, TimeSpan.FromSeconds(1));
         }
     }

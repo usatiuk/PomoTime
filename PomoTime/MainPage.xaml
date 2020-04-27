@@ -42,7 +42,7 @@
                         x:Name="MinutesText"
                         FontSize="60"
                         FontWeight="Bold"
-                        Text="{x:Bind runningState.MinutesLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
+                        Text="{x:Bind MainViewRunningState.MinutesLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
                     <Run
                         x:Name="Separator"
                         FontSize="30"
@@ -52,7 +52,7 @@
                         x:Name="SecondsText"
                         FontSize="30"
                         FontWeight="SemiBold"
-                        Text="{x:Bind runningState.SecondsLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
+                        Text="{x:Bind MainViewRunningState.SecondsLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
                 </Paragraph>
             </RichTextBlock>
             <TextBlock
@@ -62,7 +62,7 @@
                 VerticalAlignment="Top"
                 FontSize="30"
                 FontWeight="Light"
-                Text="{x:Bind runningState.CurrentPeriod, Converter={StaticResource PeriodToStringConverter}, Mode=OneWay}" />
+                Text="{x:Bind MainViewRunningState.CurrentPeriod, Converter={StaticResource PeriodToStringConverter}, Mode=OneWay}" />
         </Grid>
         <Grid Grid.Row="0" Grid.Column="1">
             <Grid>
@@ -123,13 +123,13 @@
                 Click="PlayButton_Click"
                 Icon="Play"
                 Label="Start"
-                Visibility="{x:Bind runningState.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay, ConverterParameter=True}" />
+                Visibility="{x:Bind MainViewRunningState.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay, ConverterParameter=True}" />
             <AppBarButton
                 x:Name="PauseButton"
                 Click="PauseButton_Click"
                 Icon="Pause"
                 Label="Pause"
-                Visibility="{x:Bind runningState.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
+                Visibility="{x:Bind MainViewRunningState.IsRunning, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
             <AppBarButton
                 x:Name="ResetButton"
                 Click="ResetButton_Click"
