@@ -162,7 +162,6 @@ namespace PomoTime
             {
                 MainViewRunningState.IsRunning = false;
                 MainViewRunningState.SecondsLeft--;
-                SchedulePeriodOverNotification();
             }
             else
             {
