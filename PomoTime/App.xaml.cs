@@ -39,8 +39,7 @@ namespace PomoTime
         /// Invoked when the application is launched normally by the end user.  Other entry points
         /// will be used such as when the application is launched to open a specific file.
         /// </summary>
-        /// <param name="e">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs e)
+        private void OnLaunchedOrActivated(IActivatedEventArgs e)
         {
             Frame rootFrame = Window.Current.Content as Frame;
 
@@ -53,7 +52,7 @@ namespace PomoTime
 
                 rootFrame.NavigationFailed += OnNavigationFailed;
 
-                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated 
+                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated
                     || e.PreviousExecutionState == ApplicationExecutionState.ClosedByUser)
                 {
                     ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
@@ -71,7 +70,7 @@ namespace PomoTime
                 Window.Current.Content = rootFrame;
             }
 
-            if (e.PrelaunchActivated == false)
+            if (e is LaunchActivatedEventArgs && ((LaunchActivatedEventArgs)e).PrelaunchActivated == false)
             {
                 if (rootFrame.Content == null)
                 {
@@ -83,6 +82,30 @@ namespace PomoTime
                 // Ensure the current window is active
                 Window.Current.Activate();
             }
+            if (e is ToastNotificationActivatedEventArgs)
+            {
+                ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                if (localSettings.Values["MinutesLeft"] != null)
+                {
+                    RunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
+                    RunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
+                    RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
+                    RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
+                    RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
+                }
+
+                rootFrame.Navigate(typeof(MainPage), RunningState);
+                Window.Current.Activate();
+            }
+        }
+        protected override void OnLaunched(LaunchActivatedEventArgs e)
+        {
+            OnLaunchedOrActivated(e);
+        }
+
+        protected override void OnActivated(IActivatedEventArgs e)
+        {
+            OnLaunchedOrActivated(e);
         }
 
         /// <summary>
