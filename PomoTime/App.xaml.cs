@@ -7,6 +7,7 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -22,6 +23,8 @@ namespace PomoTime
     /// </summary>
     sealed partial class App : Application
     {
+        public RunningState RunningState = new RunningState();
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -50,9 +53,18 @@ namespace PomoTime
 
                 rootFrame.NavigationFailed += OnNavigationFailed;
 
-                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
+                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated 
+                    || e.PreviousExecutionState == ApplicationExecutionState.ClosedByUser)
                 {
-                    //TODO: Load state from previously suspended application
+                    ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                    if (localSettings.Values["MinutesLeft"] != null)
+                    {
+                        RunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
+                        RunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
+                        RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
+                        RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
+                        RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
+                    }
                 }
 
                 // Place the frame in the current Window
@@ -66,7 +78,7 @@ namespace PomoTime
                     // When the navigation stack isn't restored navigate to the first page,
                     // configuring the new page by passing required information as a navigation
                     // parameter
-                    rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    rootFrame.Navigate(typeof(MainPage), RunningState);
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();

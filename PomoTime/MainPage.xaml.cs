@@ -66,6 +66,7 @@ namespace PomoTime
 
             Application.Current.Suspending += OnSuspending;
             Application.Current.Resuming += OnResuming;
+
             this.Loaded += MainPageLoaded;
 
             ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
@@ -104,9 +105,6 @@ namespace PomoTime
                 BreakMinutes = DefaultBreakMinutes;
                 LongBreakMinutes = DefaultLongBreakMinutes;
             }
-            MainViewRunningState.MinutesLeft = WorkMinutes;
-            MainViewRunningState.SecondsLeft = 0;
-
         }
 
         void timer_Tick()
@@ -280,18 +278,26 @@ namespace PomoTime
             minutes["LongBreakMinutes"] = LongBreakMinutes;
             roamingSettings.Values["Minutes"] = minutes;
 
+            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
             SuspendTime = DateTime.Now;
+            localSettings.Values["SuspendTime"] = SuspendTime.Ticks;
+            localSettings.Values["MinutesLeft"] = MainViewRunningState.MinutesLeft;
+            localSettings.Values["SecondsLeft"] = MainViewRunningState.SecondsLeft;
+            localSettings.Values["IsRunning"] = MainViewRunningState.IsRunning;
+            localSettings.Values["PreviousShortBreaks"] = MainViewRunningState.PreviousShortBreaks;
+            localSettings.Values["CurrentPeriod"] = (int)MainViewRunningState.CurrentPeriod;
+
             deferral.Complete();
         }
 
-        private void OnResuming(object sender, Object e)
+        private void FastForwardTime(DateTime since)
         {
-            TimeSpan TimeFromSuspend = DateTime.Now - SuspendTime;
-            if(!MainViewRunningState.IsRunning)
+            TimeSpan TimeFromSuspend = DateTime.Now - since;
+            if (!MainViewRunningState.IsRunning)
             {
                 return;
             }
-            if(TimeFromSuspend.TotalSeconds >= MainViewRunningState.MinutesLeft * 60 + MainViewRunningState.SecondsLeft)
+            if (TimeFromSuspend.TotalSeconds >= MainViewRunningState.MinutesLeft * 60 + MainViewRunningState.SecondsLeft)
             {
                 MainViewRunningState.IsRunning = false;
                 MainViewRunningState.MinutesLeft = 0;
@@ -299,7 +305,7 @@ namespace PomoTime
                 return;
             }
 
-            if(TimeFromSuspend.Seconds > MainViewRunningState.SecondsLeft)
+            if (TimeFromSuspend.Seconds > MainViewRunningState.SecondsLeft)
             {
                 MainViewRunningState.MinutesLeft -= TimeFromSuspend.Minutes + 1;
                 MainViewRunningState.SecondsLeft = MainViewRunningState.SecondsLeft + 60 - TimeFromSuspend.Seconds;
@@ -308,6 +314,15 @@ namespace PomoTime
 
             MainViewRunningState.MinutesLeft -= TimeFromSuspend.Minutes;
             MainViewRunningState.SecondsLeft -= TimeFromSuspend.Seconds;
+
+        }
+
+        private void OnResuming(object sender, Object e)
+        {
+            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
+
+            FastForwardTime(SuspendTime);
         }
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
@@ -321,5 +336,18 @@ namespace PomoTime
                          });
             }, TimeSpan.FromSeconds(1));
         }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            MainViewRunningState = (RunningState)e.Parameter;
+
+            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
+
+            FastForwardTime(SuspendTime);
+        }
+
     }
 }
