@@ -225,7 +225,7 @@ namespace PomoTime
             AppBarButton b = sender as AppBarButton;
             MainViewRunningState.IsRunning = true;
 
-            if(MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
+            if (MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
             {
                 SchedulePeriodOverNotification();
             }
@@ -320,9 +320,11 @@ namespace PomoTime
         private void OnResuming(object sender, Object e)
         {
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
-
-            FastForwardTime(SuspendTime);
+            if (localSettings.Values["SuspendTime"] != null)
+            {
+                SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
+                FastForwardTime(SuspendTime);
+            }
         }
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
@@ -344,9 +346,11 @@ namespace PomoTime
             MainViewRunningState = (RunningState)e.Parameter;
 
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
-
-            FastForwardTime(SuspendTime);
+            if (localSettings.Values["SuspendTime"] != null)
+            {
+                SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
+                FastForwardTime(SuspendTime);
+            }
         }
 
     }
