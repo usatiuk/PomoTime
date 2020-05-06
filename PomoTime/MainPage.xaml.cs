@@ -239,9 +239,8 @@ namespace PomoTime
             ClearScheduledNotifications();
         }
 
-        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        private void Reset()
         {
-            AppBarButton b = sender as AppBarButton;
             MainViewRunningState.IsRunning = false;
 
             MainViewRunningState.CurrentPeriod = Period.Work;
@@ -249,6 +248,13 @@ namespace PomoTime
             MainViewRunningState.SecondsLeft = 0;
 
             ClearScheduledNotifications();
+        }
+
+        private void ResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            AppBarButton b = sender as AppBarButton;
+
+            Reset();
         }
 
         private void Plus1Button_Click(object sender, RoutedEventArgs e)
@@ -350,6 +356,9 @@ namespace PomoTime
             {
                 SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
                 FastForwardTime(SuspendTime);
+            } else
+            {
+                Reset();
             }
         }
 
