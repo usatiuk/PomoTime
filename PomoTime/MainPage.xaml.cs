@@ -34,6 +34,7 @@ namespace PomoTime
         private const int DefaultBreakMinutes = 5;
         private const int DefaultWorkMinutes = 25;
         private const int DefaultLongBreakMinutes = 15;
+        ThreadPoolTimer Timer;
 
         private DateTime SuspendTime;
         private int _work_minutes;
@@ -68,6 +69,7 @@ namespace PomoTime
             Application.Current.Resuming += OnResuming;
 
             this.Loaded += MainPageLoaded;
+            this.Unloaded += MainPageUnloaded;
 
             ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
             Windows.Storage.ApplicationDataCompositeValue minutes = (ApplicationDataCompositeValue)roamingSettings.Values["Minutes"];
@@ -194,6 +196,11 @@ namespace PomoTime
                         {
                             Text = header
                         },
+                        new AdaptiveText()
+                        {
+                            Text = "Open app or the notification to continue"
+                        },
+
                     },
 
                 }
@@ -335,14 +342,22 @@ namespace PomoTime
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
         {
-            ThreadPoolTimer timer = ThreadPoolTimer.CreatePeriodicTimer(async (t) =>
+            if (Timer == null)
             {
-                await Dispatcher.RunAsync(CoreDispatcherPriority.High,
-                    () =>
-                         {
-                             timer_Tick();
-                         });
-            }, TimeSpan.FromSeconds(1));
+                Timer = ThreadPoolTimer.CreatePeriodicTimer(async (t) =>
+                {
+                    await Dispatcher.RunAsync(CoreDispatcherPriority.High,
+                        () =>
+                             {
+                                 timer_Tick();
+                             });
+                }, TimeSpan.FromSeconds(1));
+            }
+        }
+
+        private void MainPageUnloaded(object sender, RoutedEventArgs e)
+        {
+            Timer.Cancel();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -356,7 +371,8 @@ namespace PomoTime
             {
                 SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
                 FastForwardTime(SuspendTime);
-            } else
+            }
+            else
             {
                 Reset();
             }
