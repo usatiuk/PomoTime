@@ -19,24 +19,7 @@ namespace PomoTime
         {
             // The value parameter is the data from the source object.
             Period period = (Period)value;
-            string output;
-            switch (period)
-            {
-                case Period.LongBreak:
-                    output = "Long break";
-                    break;
-                case Period.ShortBreak:
-                    output = "Short break";
-                    break;
-                case Period.Work:
-                    output = "Work";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            // Return the month value to pass to the target.
-            return output;
+            return period.Name();
         }
 
         // ConvertBack is not implemented for a OneWay binding.

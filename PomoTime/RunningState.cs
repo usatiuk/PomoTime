@@ -8,6 +8,29 @@ using System.Threading.Tasks;
 
 namespace PomoTime
 {
+    public static class PeriodExtensions
+    {
+        public static string Name(this Period period)
+        {
+            string output;
+            switch (period)
+            {
+                case Period.LongBreak:
+                    output = "Long break";
+                    break;
+                case Period.ShortBreak:
+                    output = "Short break";
+                    break;
+                case Period.Work:
+                    output = "Work";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return output;
+        }
+    }
     public enum Period
     {
         Work, ShortBreak, LongBreak
@@ -69,6 +92,18 @@ namespace PomoTime
 
         }
 
+        public DateTime _start_time;
+
+        public DateTime StartTime
+        {
+            get { return _start_time; }
+            set
+            {
+                _start_time = value;
+                NotifyPropertyChanged("StartTime");
+            }
+        }
+
         public int _previous_short_breaks;
 
         public int PreviousShortBreaks
@@ -79,6 +114,11 @@ namespace PomoTime
                 _previous_short_breaks = value;
                 NotifyPropertyChanged("PreviousShortBreaks");
             }
+        }
+
+        public string CurrentPeriodName()
+        {
+            return CurrentPeriod.Name();
         }
     }
 

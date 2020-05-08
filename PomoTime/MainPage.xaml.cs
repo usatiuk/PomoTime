@@ -109,7 +109,7 @@ namespace PomoTime
             }
         }
 
-        void timer_Tick()
+        void TimerTick()
         {
             if (!MainViewRunningState.IsRunning)
             {
@@ -167,25 +167,12 @@ namespace PomoTime
             {
                 MainViewRunningState.SecondsLeft--;
             }
+            SaveLocalState();
         }
 
         void SchedulePeriodOverNotification()
         {
-            string header;
-            switch (MainViewRunningState.CurrentPeriod)
-            {
-                case Period.LongBreak:
-                    header = "Long break time over!";
-                    break;
-                case Period.ShortBreak:
-                    header = "Short break time over!";
-                    break;
-                case Period.Work:
-                    header = "Work time over!";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            string header = $"{MainViewRunningState.CurrentPeriod.Name()} is over!";
             ToastVisual visual = new ToastVisual()
             {
                 BindingGeneric = new ToastBindingGeneric()
@@ -206,9 +193,27 @@ namespace PomoTime
                 }
             };
 
+            ToastActionsCustom actions = new ToastActionsCustom()
+            {
+                Buttons =
+                {
+                    new ToastButton("Continue", "action=continue")
+                    {
+                        ActivationType = ToastActivationType.Foreground
+                    },
+
+                    new ToastButton("Add 5 minutes", "action=5minutes")
+                    {
+                        ActivationType = ToastActivationType.Foreground
+                    }
+                }
+            };
+
             ToastContent toastContent = new ToastContent()
             {
                 Visual = visual,
+                Actions = actions,
+                Scenario = ToastScenario.Alarm,
             };
 
             TimeSpan WaitTime = new TimeSpan(0, MainViewRunningState.MinutesLeft, MainViewRunningState.SecondsLeft);
@@ -231,6 +236,8 @@ namespace PomoTime
         {
             AppBarButton b = sender as AppBarButton;
             MainViewRunningState.IsRunning = true;
+            MainViewRunningState.StartTime = DateTime.Now;
+            SaveLocalState();
 
             if (MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
             {
@@ -291,21 +298,31 @@ namespace PomoTime
             minutes["LongBreakMinutes"] = LongBreakMinutes;
             roamingSettings.Values["Minutes"] = minutes;
 
+            SaveLocalState();
+
+            deferral.Complete();
+        }
+
+        private void SaveLocalState()
+        {
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
             SuspendTime = DateTime.Now;
             localSettings.Values["SuspendTime"] = SuspendTime.Ticks;
+            localSettings.Values["StartTime"] = MainViewRunningState.StartTime.Ticks;
             localSettings.Values["MinutesLeft"] = MainViewRunningState.MinutesLeft;
             localSettings.Values["SecondsLeft"] = MainViewRunningState.SecondsLeft;
             localSettings.Values["IsRunning"] = MainViewRunningState.IsRunning;
             localSettings.Values["PreviousShortBreaks"] = MainViewRunningState.PreviousShortBreaks;
             localSettings.Values["CurrentPeriod"] = (int)MainViewRunningState.CurrentPeriod;
-
-            deferral.Complete();
         }
 
         private void FastForwardTime(DateTime since)
         {
             TimeSpan TimeFromSuspend = DateTime.Now - since;
+            if(TimeFromSuspend.TotalMilliseconds < 0)
+            {
+                return;
+            }
             if (!MainViewRunningState.IsRunning)
             {
                 return;
@@ -349,7 +366,7 @@ namespace PomoTime
                     await Dispatcher.RunAsync(CoreDispatcherPriority.High,
                         () =>
                              {
-                                 timer_Tick();
+                                 TimerTick();
                              });
                 }, TimeSpan.FromSeconds(1));
             }
@@ -375,6 +392,7 @@ namespace PomoTime
             else
             {
                 Reset();
+                SaveLocalState();
             }
         }
 

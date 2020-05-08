@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.QueryStringDotNET;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -84,6 +85,8 @@ namespace PomoTime
             }
             if (e is ToastNotificationActivatedEventArgs)
             {
+                var toastActivationArgs = e as ToastNotificationActivatedEventArgs;
+
                 ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
                 if (localSettings.Values["MinutesLeft"] != null)
                 {
@@ -92,6 +95,22 @@ namespace PomoTime
                     RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
                     RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
                     RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
+                }
+
+                QueryString args = QueryString.Parse(toastActivationArgs.Argument);
+                if (args.Contains("action"))
+                {
+                    localSettings.Values["SuspendTime"] = (DateTime.Now + new TimeSpan(1, 0, 0)).Ticks;
+                    switch (args["action"])
+                    {
+                        case "continue":
+                            RunningState.IsRunning = true;
+                            break;
+                        case "5minutes":
+                            RunningState.MinutesLeft += 5;
+                            RunningState.IsRunning = true;
+                            break;
+                    }
                 }
 
                 rootFrame.Navigate(typeof(MainPage), RunningState);
