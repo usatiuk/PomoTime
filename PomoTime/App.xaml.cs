@@ -109,7 +109,8 @@ namespace PomoTime
                             RunningState.SecondsLeft = 0;
                             break;
                         case "5minutes":
-                            RunningState.MinutesLeft += 5;
+                            RunningState.MinutesLeft = 5;
+                            RunningState.SecondsLeft = 0;
                             RunningState.IsRunning = true;
                             break;
                     }
