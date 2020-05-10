@@ -231,6 +231,21 @@ namespace PomoTime
             }
         }
 
+        private void RescheduleNotification()
+        {
+            ClearScheduledNotifications();
+
+            if(!MainViewRunningState.IsRunning)
+            {
+                return;
+            }
+
+            if (MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
+            {
+                SchedulePeriodOverNotification();
+            }
+        }
+
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
@@ -275,18 +290,24 @@ namespace PomoTime
         {
             AppBarButton b = sender as AppBarButton;
             MainViewRunningState.MinutesLeft += 1;
+
+            RescheduleNotification();
         }
 
         private void Plus5Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
             MainViewRunningState.MinutesLeft += 5;
+
+            RescheduleNotification();
         }
 
         private void Plus10Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
             MainViewRunningState.MinutesLeft += 10;
+
+            RescheduleNotification();
         }
         private void OnSuspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
@@ -394,6 +415,8 @@ namespace PomoTime
                 Reset();
                 SaveLocalState();
             }
+
+            RescheduleNotification();
         }
 
     }
