@@ -83,7 +83,7 @@ namespace PomoTime
                 // Ensure the current window is active
                 Window.Current.Activate();
             }
-            if (e is ToastNotificationActivatedEventArgs)
+            else if (e is ToastNotificationActivatedEventArgs)
             {
                 var toastActivationArgs = e as ToastNotificationActivatedEventArgs;
 

@@ -312,15 +312,7 @@ namespace PomoTime
         private void OnSuspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
             var deferral = e.SuspendingOperation.GetDeferral();
-            ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
-            Windows.Storage.ApplicationDataCompositeValue minutes = new Windows.Storage.ApplicationDataCompositeValue();
-            minutes["WorkMinutes"] = WorkMinutes;
-            minutes["BreakMinutes"] = BreakMinutes;
-            minutes["LongBreakMinutes"] = LongBreakMinutes;
-            roamingSettings.Values["Minutes"] = minutes;
-
             SaveLocalState();
-
             deferral.Complete();
         }
 
@@ -335,6 +327,13 @@ namespace PomoTime
             localSettings.Values["IsRunning"] = MainViewRunningState.IsRunning;
             localSettings.Values["PreviousShortBreaks"] = MainViewRunningState.PreviousShortBreaks;
             localSettings.Values["CurrentPeriod"] = (int)MainViewRunningState.CurrentPeriod;
+
+            ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
+            Windows.Storage.ApplicationDataCompositeValue minutes = new Windows.Storage.ApplicationDataCompositeValue();
+            minutes["WorkMinutes"] = WorkMinutes;
+            minutes["BreakMinutes"] = BreakMinutes;
+            minutes["LongBreakMinutes"] = LongBreakMinutes;
+            roamingSettings.Values["Minutes"] = minutes;
         }
 
         private void FastForwardTime(DateTime since)
