@@ -151,7 +151,7 @@ namespace PomoTime
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
-                    SchedulePeriodOverNotification();
+                    RescheduleNotification();
                 }
                 else
                 {
@@ -235,7 +235,7 @@ namespace PomoTime
         {
             ClearScheduledNotifications();
 
-            if(!MainViewRunningState.IsRunning)
+            if (!MainViewRunningState.IsRunning)
             {
                 return;
             }
@@ -313,6 +313,7 @@ namespace PomoTime
         {
             var deferral = e.SuspendingOperation.GetDeferral();
             SaveLocalState();
+            StopTimer();
             deferral.Complete();
         }
 
@@ -339,7 +340,7 @@ namespace PomoTime
         private void FastForwardTime(DateTime since)
         {
             TimeSpan TimeFromSuspend = DateTime.Now - since;
-            if(TimeFromSuspend.TotalMilliseconds < 0)
+            if (TimeFromSuspend.TotalMilliseconds <= 0)
             {
                 return;
             }
@@ -372,12 +373,15 @@ namespace PomoTime
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
             if (localSettings.Values["SuspendTime"] != null)
             {
+                StopTimer();
                 SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
                 FastForwardTime(SuspendTime);
+                StartTimer();
             }
+            SaveLocalState();
         }
 
-        private void MainPageLoaded(object sender, RoutedEventArgs e)
+        private void StartTimer()
         {
             if (Timer == null)
             {
@@ -385,16 +389,30 @@ namespace PomoTime
                 {
                     await Dispatcher.RunAsync(CoreDispatcherPriority.High,
                         () =>
-                             {
-                                 TimerTick();
-                             });
+                        {
+                            TimerTick();
+                        });
                 }, TimeSpan.FromSeconds(1));
             }
         }
 
+        private void StopTimer()
+        {
+            if (Timer != null)
+            {
+                Timer.Cancel();
+                Timer = null;
+            }
+        }
+
+        private void MainPageLoaded(object sender, RoutedEventArgs e)
+        {
+            StartTimer();
+        }
+
         private void MainPageUnloaded(object sender, RoutedEventArgs e)
         {
-            Timer.Cancel();
+            StopTimer();
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -402,7 +420,7 @@ namespace PomoTime
             base.OnNavigatedTo(e);
 
             MainViewRunningState = (RunningState)e.Parameter;
-
+            StopTimer();
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
             if (localSettings.Values["SuspendTime"] != null)
             {
@@ -414,7 +432,7 @@ namespace PomoTime
                 Reset();
                 SaveLocalState();
             }
-
+            StartTimer();
             RescheduleNotification();
         }
 
