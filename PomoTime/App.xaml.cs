@@ -44,6 +44,16 @@ namespace PomoTime
         {
             Frame rootFrame = Window.Current.Content as Frame;
 
+            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (localSettings.Values["MinutesLeft"] != null)
+            {
+                RunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
+                RunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
+                RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
+                RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
+                RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
+            }
+
             // Do not repeat app initialization when the Window already has content,
             // just ensure that the window is active
             if (rootFrame == null)
@@ -55,17 +65,7 @@ namespace PomoTime
 
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated
                     || e.PreviousExecutionState == ApplicationExecutionState.ClosedByUser)
-                {
-                    ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-                    if (localSettings.Values["MinutesLeft"] != null)
-                    {
-                        RunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
-                        RunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
-                        RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
-                        RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
-                        RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
-                    }
-                }
+                {}
 
                 // Place the frame in the current Window
                 Window.Current.Content = rootFrame;
@@ -86,16 +86,6 @@ namespace PomoTime
             else if (e is ToastNotificationActivatedEventArgs)
             {
                 var toastActivationArgs = e as ToastNotificationActivatedEventArgs;
-
-                ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-                if (localSettings.Values["MinutesLeft"] != null)
-                {
-                    RunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
-                    RunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
-                    RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
-                    RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
-                    RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
-                }
 
                 QueryString args = QueryString.Parse(toastActivationArgs.Argument);
                 if (args.Contains("action"))
