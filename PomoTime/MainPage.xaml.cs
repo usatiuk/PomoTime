@@ -109,12 +109,8 @@ namespace PomoTime
             }
         }
 
-        void TimerTick()
+        void PlusSecond()
         {
-            if (!MainViewRunningState.IsRunning)
-            {
-                return;
-            }
             if (MainViewRunningState.SecondsLeft == 0)
             {
                 MainViewRunningState.SecondsLeft = 59;
@@ -168,6 +164,14 @@ namespace PomoTime
                 MainViewRunningState.SecondsLeft--;
             }
             SaveLocalState();
+        }
+        void TimerTick()
+        {
+            if (!MainViewRunningState.IsRunning)
+            {
+                return;
+            }
+            PlusSecond();
         }
 
         void SchedulePeriodOverNotification()
@@ -353,6 +357,8 @@ namespace PomoTime
                 MainViewRunningState.IsRunning = false;
                 MainViewRunningState.MinutesLeft = 0;
                 MainViewRunningState.SecondsLeft = 0;
+                // Continue onto the next period
+                PlusSecond();
                 return;
             }
 
