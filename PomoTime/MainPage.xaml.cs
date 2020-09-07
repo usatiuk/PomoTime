@@ -260,7 +260,7 @@ namespace PomoTime
 
             if (MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
             {
-                SchedulePeriodOverNotification();
+                RescheduleNotification();
             }
         }
 
@@ -269,7 +269,7 @@ namespace PomoTime
             AppBarButton b = sender as AppBarButton;
             MainViewRunningState.IsRunning = false;
 
-            ClearScheduledNotifications();
+            RescheduleNotification();
         }
 
         private void Reset()
@@ -280,7 +280,7 @@ namespace PomoTime
             MainViewRunningState.MinutesLeft = WorkMinutes;
             MainViewRunningState.SecondsLeft = 0;
 
-            ClearScheduledNotifications();
+            RescheduleNotification();
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
@@ -421,23 +421,61 @@ namespace PomoTime
             StopTimer();
         }
 
+        private void LoadRunningState()
+        {
+            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (localSettings.Values["MinutesLeft"] != null)
+            {
+                MainViewRunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
+                MainViewRunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
+                MainViewRunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
+                MainViewRunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
+                MainViewRunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
+            }
+        }
+
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            MainViewRunningState = (RunningState)e.Parameter;
+            string action = (string)e.Parameter;
+            
             StopTimer();
+
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
             if (localSettings.Values["SuspendTime"] != null)
             {
                 SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
-                FastForwardTime(SuspendTime);
+                LoadRunningState();
+
+                if(action != null)
+                {
+                    switch (action)
+                    {
+                        case "5minutes":
+                            MainViewRunningState.MinutesLeft = 5;
+                            MainViewRunningState.SecondsLeft = 0;
+                            MainViewRunningState.IsRunning = true;
+                            break;
+                        case "continue":
+                            MainViewRunningState.MinutesLeft = 0;
+                            MainViewRunningState.SecondsLeft = 0;
+                            // Onto the next period
+                            PlusSecond();
+                            MainViewRunningState.IsRunning = true;
+                            break;
+
+                    }
+                } else
+                {
+                    FastForwardTime(SuspendTime);
+                }
             }
             else
             {
                 Reset();
                 SaveLocalState();
             }
+
             StartTimer();
             RescheduleNotification();
         }

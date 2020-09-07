@@ -24,7 +24,6 @@ namespace PomoTime
     /// </summary>
     sealed partial class App : Application
     {
-        public RunningState RunningState = new RunningState();
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -43,16 +42,6 @@ namespace PomoTime
         private void OnLaunchedOrActivated(IActivatedEventArgs e)
         {
             Frame rootFrame = Window.Current.Content as Frame;
-
-            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values["MinutesLeft"] != null)
-            {
-                RunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
-                RunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
-                RunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
-                RunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
-                RunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
-            }
 
             // Do not repeat app initialization when the Window already has content,
             // just ensure that the window is active
@@ -78,7 +67,7 @@ namespace PomoTime
                     // When the navigation stack isn't restored navigate to the first page,
                     // configuring the new page by passing required information as a navigation
                     // parameter
-                    rootFrame.Navigate(typeof(MainPage), RunningState);
+                    rootFrame.Navigate(typeof(MainPage), null);
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();
@@ -90,23 +79,12 @@ namespace PomoTime
                 QueryString args = QueryString.Parse(toastActivationArgs.Argument);
                 if (args.Contains("action"))
                 {
-                    localSettings.Values["SuspendTime"] = (DateTime.Now + new TimeSpan(1, 0, 0)).Ticks;
-                    switch (args["action"])
-                    {
-                        case "continue":
-                            RunningState.IsRunning = true;
-                            RunningState.MinutesLeft = 0;
-                            RunningState.SecondsLeft = 0;
-                            break;
-                        case "5minutes":
-                            RunningState.MinutesLeft = 5;
-                            RunningState.SecondsLeft = 0;
-                            RunningState.IsRunning = true;
-                            break;
-                    }
+                    rootFrame.Navigate(typeof(MainPage), args["action"]);
+                } else
+                {
+                    rootFrame.Navigate(typeof(MainPage), null);
                 }
 
-                rootFrame.Navigate(typeof(MainPage), RunningState);
                 Window.Current.Activate();
             }
         }
