@@ -83,6 +83,7 @@
                     Header="Work time:"
                     LargeChange="10"
                     Minimum="0"
+                    Maximum="120"
                     SmallChange="5"
                     SpinButtonPlacementMode="Inline"
                     Value="{x:Bind WorkMinutes, Mode=TwoWay}" />
@@ -95,6 +96,7 @@
                     Header="Break time:"
                     LargeChange="5"
                     Minimum="0"
+                    Maximum="120"
                     SmallChange="1"
                     SpinButtonPlacementMode="Inline"
                     Value="{x:Bind BreakMinutes, Mode=TwoWay}" />
@@ -107,6 +109,7 @@
                     Header="Long break time:"
                     LargeChange="15"
                     Minimum="0"
+                    Maximum="120"
                     SmallChange="5"
                     SpinButtonPlacementMode="Inline"
                     Value="{x:Bind LongBreakMinutes, Mode=TwoWay}" />
