@@ -36,7 +36,6 @@ namespace PomoTime
         private const int DefaultLongBreakMinutes = 15;
         ThreadPoolTimer Timer;
 
-        private DateTime SuspendTime;
         private int _work_minutes;
         private int BreakMinutes { get; set; }
         private int WorkMinutes
@@ -73,40 +72,16 @@ namespace PomoTime
 
             ApplicationDataContainer roamingSettings = Windows.Storage.ApplicationData.Current.RoamingSettings;
             Windows.Storage.ApplicationDataCompositeValue minutes = (ApplicationDataCompositeValue)roamingSettings.Values["Minutes"];
-            if (minutes != null)
+            if (minutes == null)
             {
-                if (minutes["WorkMinutes"] != null)
-                {
-                    WorkMinutes = (int)minutes["WorkMinutes"];
-                }
-                else
-                {
-                    WorkMinutes = DefaultWorkMinutes;
-                }
-                if (minutes["BreakMinutes"] != null)
-                {
-                    BreakMinutes = (int)minutes["BreakMinutes"];
-                }
-                else
-                {
-                    BreakMinutes = DefaultBreakMinutes;
-                }
-                if (minutes["LongBreakMinutes"] != null)
-                {
-                    LongBreakMinutes = (int)minutes["LongBreakMinutes"];
-                }
-                else
-                {
-                    LongBreakMinutes = DefaultLongBreakMinutes;
-                }
+                minutes = new Windows.Storage.ApplicationDataCompositeValue();
+                minutes["WorkMinutes"] = DefaultWorkMinutes;
+                minutes["BreakMinutes"] = DefaultBreakMinutes;
+                minutes["LongBreakMinutes"] = DefaultLongBreakMinutes;
             }
-            else
-            {
-                // Some maigc defualt numbers
-                WorkMinutes = DefaultWorkMinutes;
-                BreakMinutes = DefaultBreakMinutes;
-                LongBreakMinutes = DefaultLongBreakMinutes;
-            }
+            WorkMinutes = (int)minutes["WorkMinutes"];
+            BreakMinutes = (int)minutes["BreakMinutes"];
+            LongBreakMinutes = (int)minutes["LongBreakMinutes"];
         }
 
         void PlusSecond()
@@ -279,6 +254,7 @@ namespace PomoTime
             MainViewRunningState.CurrentPeriod = Period.Work;
             MainViewRunningState.MinutesLeft = WorkMinutes;
             MainViewRunningState.SecondsLeft = 0;
+            MainViewRunningState.PreviousShortBreaks = 0;
 
             RescheduleNotification();
         }
@@ -324,7 +300,7 @@ namespace PomoTime
         private void SaveLocalState()
         {
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            SuspendTime = DateTime.Now;
+            DateTime SuspendTime = DateTime.Now;
             localSettings.Values["SuspendTime"] = SuspendTime.Ticks;
             localSettings.Values["StartTime"] = MainViewRunningState.StartTime.Ticks;
             localSettings.Values["MinutesLeft"] = MainViewRunningState.MinutesLeft;
@@ -341,17 +317,27 @@ namespace PomoTime
             roamingSettings.Values["Minutes"] = minutes;
         }
 
-        private void FastForwardTime(DateTime since)
+        private void FastForwardTime()
         {
-            TimeSpan TimeFromSuspend = DateTime.Now - since;
+            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (localSettings.Values["SuspendTime"] == null)
+            {
+                return;
+            }
+
+            DateTime SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
+            TimeSpan TimeFromSuspend = DateTime.Now - SuspendTime;
+
             if (TimeFromSuspend.TotalMilliseconds <= 0)
             {
                 return;
             }
+
             if (!MainViewRunningState.IsRunning)
             {
                 return;
             }
+
             if (TimeFromSuspend.TotalSeconds >= MainViewRunningState.MinutesLeft * 60 + MainViewRunningState.SecondsLeft)
             {
                 MainViewRunningState.IsRunning = false;
@@ -374,14 +360,7 @@ namespace PomoTime
 
         private void OnResuming(object sender, Object e)
         {
-            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values["SuspendTime"] != null)
-            {
-                StopTimer();
-                SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
-                FastForwardTime(SuspendTime);
-                StartTimer();
-            }
+            FastForwardTime();
             SaveLocalState();
         }
 
@@ -429,6 +408,9 @@ namespace PomoTime
                 MainViewRunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
                 MainViewRunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
                 MainViewRunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
+            } else
+            {
+                Reset();
             }
         }
 
@@ -436,45 +418,34 @@ namespace PomoTime
         {
             base.OnNavigatedTo(e);
             string action = (string)e.Parameter;
-            
-            StopTimer();
 
-            ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values["SuspendTime"] != null)
+            LoadRunningState();
+            FastForwardTime();
+
+            if (action != null)
             {
-                SuspendTime = new DateTime((long)localSettings.Values["SuspendTime"]);
-                LoadRunningState();
-
-                if(action != null)
+                switch (action)
                 {
-                    switch (action)
-                    {
-                        case "5minutes":
-                            MainViewRunningState.MinutesLeft = 5;
-                            MainViewRunningState.SecondsLeft = 0;
-                            MainViewRunningState.IsRunning = true;
-                            break;
-                        case "continue":
-                            MainViewRunningState.MinutesLeft = 0;
-                            MainViewRunningState.SecondsLeft = 0;
-                            // Onto the next period
-                            PlusSecond();
-                            MainViewRunningState.IsRunning = true;
-                            break;
-
-                    }
-                } else
-                {
-                    FastForwardTime(SuspendTime);
+                    case "5minutes":
+                        MainViewRunningState.MinutesLeft = 5;
+                        MainViewRunningState.SecondsLeft = 0;
+                        MainViewRunningState.IsRunning = true;
+                        break;
+                    case "continue":
+                        MainViewRunningState.MinutesLeft = 0;
+                        MainViewRunningState.SecondsLeft = 0;
+                        // Onto the next period
+                        PlusSecond();
+                        MainViewRunningState.IsRunning = true;
+                        break;
+                    case "nothing":
+                        MainViewRunningState.MinutesLeft = 0;
+                        MainViewRunningState.SecondsLeft = 0;
+                        MainViewRunningState.IsRunning = false;
+                        break;
                 }
             }
-            else
-            {
-                Reset();
-                SaveLocalState();
-            }
 
-            StartTimer();
             RescheduleNotification();
         }
 

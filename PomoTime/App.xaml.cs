@@ -82,7 +82,7 @@ namespace PomoTime
                     rootFrame.Navigate(typeof(MainPage), args["action"]);
                 } else
                 {
-                    rootFrame.Navigate(typeof(MainPage), null);
+                    rootFrame.Navigate(typeof(MainPage), "nothing");
                 }
 
                 Window.Current.Activate();
