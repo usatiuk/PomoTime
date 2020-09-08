@@ -357,8 +357,6 @@ namespace PomoTime
                 MainViewRunningState.IsRunning = false;
                 MainViewRunningState.MinutesLeft = 0;
                 MainViewRunningState.SecondsLeft = 0;
-                // Continue onto the next period
-                PlusSecond();
                 return;
             }
 
