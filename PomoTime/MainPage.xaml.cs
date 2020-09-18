@@ -1,24 +1,15 @@
-﻿using System;
+﻿using Microsoft.Toolkit.Uwp.Notifications;
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.UI.ViewManagement;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using controls = Microsoft.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using Windows.UI.Notifications;
 using Windows.Storage;
 using Windows.System.Threading;
 using Windows.UI.Core;
-using Microsoft.Toolkit.Uwp.Notifications;
+using Windows.UI.Notifications;
+using Windows.UI.ViewManagement;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -415,7 +406,8 @@ namespace PomoTime
                 MainViewRunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
                 MainViewRunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
                 MainViewRunningState.CurrentPeriod = (Period)localSettings.Values["CurrentPeriod"];
-            } else
+            }
+            else
             {
                 Reset();
             }
