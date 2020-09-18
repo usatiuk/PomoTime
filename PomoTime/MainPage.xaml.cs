@@ -237,6 +237,7 @@ namespace PomoTime
             {
                 RescheduleNotification();
             }
+            RestartTimer();
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
@@ -386,6 +387,12 @@ namespace PomoTime
                 Timer.Cancel();
                 Timer = null;
             }
+        }
+
+        private void RestartTimer()
+        {
+            StopTimer();
+            StartTimer();
         }
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
