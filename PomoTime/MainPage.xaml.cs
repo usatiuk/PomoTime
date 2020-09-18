@@ -36,7 +36,7 @@ namespace PomoTime
             {
                 if (!MainViewRunningState.IsRunning && MainViewRunningState.CurrentPeriod == Period.Work)
                 {
-                    MainViewRunningState.MinutesLeft = value;
+                    MainViewRunningState.SecondsLeft = value * 60;
                 }
                 _work_minutes = value;
             }
@@ -79,48 +79,36 @@ namespace PomoTime
         {
             if (MainViewRunningState.SecondsLeft == 0)
             {
-                MainViewRunningState.SecondsLeft = 59;
-                if (MainViewRunningState.MinutesLeft == 0)
+                switch (MainViewRunningState.CurrentPeriod)
                 {
-                    switch (MainViewRunningState.CurrentPeriod)
-                    {
-                        case Period.Work:
-                            if (MainViewRunningState.PreviousShortBreaks != 4)
-                            {
-                                MainViewRunningState.CurrentPeriod = Period.ShortBreak;
-                                MainViewRunningState.MinutesLeft = BreakMinutes;
-                            }
-                            else
-                            {
-                                MainViewRunningState.CurrentPeriod = Period.LongBreak;
-                                MainViewRunningState.MinutesLeft = LongBreakMinutes;
-                            }
-                            MainViewRunningState.SecondsLeft = 0;
-
-                            break;
-                        case Period.ShortBreak:
-                            MainViewRunningState.CurrentPeriod = Period.Work;
-                            MainViewRunningState.PreviousShortBreaks += 1;
-                            MainViewRunningState.MinutesLeft = WorkMinutes;
-                            MainViewRunningState.SecondsLeft = 0;
-                            break;
-                        case Period.LongBreak:
-                            MainViewRunningState.CurrentPeriod = Period.Work;
-                            MainViewRunningState.PreviousShortBreaks = 0;
-                            MainViewRunningState.MinutesLeft = WorkMinutes;
-                            MainViewRunningState.SecondsLeft = 0;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
-                    RescheduleNotification();
+                    case Period.Work:
+                        if (MainViewRunningState.PreviousShortBreaks < 4)
+                        {
+                            MainViewRunningState.CurrentPeriod = Period.ShortBreak;
+                            MainViewRunningState.SecondsLeft = BreakMinutes * 60;
+                        }
+                        else
+                        {
+                            MainViewRunningState.CurrentPeriod = Period.LongBreak;
+                            MainViewRunningState.SecondsLeft = LongBreakMinutes * 60;
+                        }
+                        break;
+                    case Period.ShortBreak:
+                        MainViewRunningState.CurrentPeriod = Period.Work;
+                        MainViewRunningState.PreviousShortBreaks += 1;
+                        MainViewRunningState.SecondsLeft = WorkMinutes * 60;
+                        break;
+                    case Period.LongBreak:
+                        MainViewRunningState.CurrentPeriod = Period.Work;
+                        MainViewRunningState.PreviousShortBreaks = 0;
+                        MainViewRunningState.SecondsLeft = WorkMinutes * 60;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-                else
-                {
-                    MainViewRunningState.MinutesLeft--;
-                }
+                RescheduleNotification();
             }
-            else if (MainViewRunningState.SecondsLeft == 1 && MainViewRunningState.MinutesLeft == 0)
+            else if (MainViewRunningState.SecondsLeft == 1)
             {
                 MainViewRunningState.IsRunning = false;
                 MainViewRunningState.SecondsLeft--;
@@ -186,7 +174,7 @@ namespace PomoTime
                 Scenario = ToastScenario.Alarm,
             };
 
-            TimeSpan WaitTime = new TimeSpan(0, MainViewRunningState.MinutesLeft, MainViewRunningState.SecondsLeft);
+            TimeSpan WaitTime = new TimeSpan(0, 0, MainViewRunningState.SecondsLeft);
             var toast = new Windows.UI.Notifications.ScheduledToastNotification(toastContent.GetXml(), DateTime.Now + WaitTime);
             Windows.UI.Notifications.ToastNotificationManager.CreateToastNotifier().AddToSchedule(toast);
         }
@@ -210,7 +198,7 @@ namespace PomoTime
                 return;
             }
 
-            if (MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
+            if (MainViewRunningState.SecondsLeft != 0)
             {
                 SchedulePeriodOverNotification();
             }
@@ -224,10 +212,7 @@ namespace PomoTime
             MainViewRunningState.StartTime = DateTime.Now;
             SaveLocalState();
 
-            if (MainViewRunningState.MinutesLeft != 0 || MainViewRunningState.SecondsLeft != 0)
-            {
-                RescheduleNotification();
-            }
+            RescheduleNotification();
             RestartTimer();
         }
 
@@ -244,8 +229,7 @@ namespace PomoTime
             MainViewRunningState.IsRunning = false;
 
             MainViewRunningState.CurrentPeriod = Period.Work;
-            MainViewRunningState.MinutesLeft = WorkMinutes;
-            MainViewRunningState.SecondsLeft = 0;
+            MainViewRunningState.SecondsLeft = WorkMinutes * 60;
             MainViewRunningState.PreviousShortBreaks = 0;
 
             RescheduleNotification();
@@ -261,7 +245,7 @@ namespace PomoTime
         private void Plus1Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            MainViewRunningState.MinutesLeft += 1;
+            MainViewRunningState.SecondsLeft += 60;
 
             RescheduleNotification();
         }
@@ -269,7 +253,7 @@ namespace PomoTime
         private void Plus5Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            MainViewRunningState.MinutesLeft += 5;
+            MainViewRunningState.SecondsLeft += 5 * 60;
 
             RescheduleNotification();
         }
@@ -277,7 +261,7 @@ namespace PomoTime
         private void Plus10Button_Click(object sender, RoutedEventArgs e)
         {
             AppBarButton b = sender as AppBarButton;
-            MainViewRunningState.MinutesLeft += 10;
+            MainViewRunningState.SecondsLeft += 10 * 60;
 
             RescheduleNotification();
         }
@@ -295,7 +279,6 @@ namespace PomoTime
             DateTime SuspendTime = DateTime.Now;
             localSettings.Values["SuspendTime"] = SuspendTime.Ticks;
             localSettings.Values["StartTime"] = MainViewRunningState.StartTime.Ticks;
-            localSettings.Values["MinutesLeft"] = MainViewRunningState.MinutesLeft;
             localSettings.Values["SecondsLeft"] = MainViewRunningState.SecondsLeft;
             localSettings.Values["IsRunning"] = MainViewRunningState.IsRunning;
             localSettings.Values["PreviousShortBreaks"] = MainViewRunningState.PreviousShortBreaks;
@@ -330,24 +313,14 @@ namespace PomoTime
                 return;
             }
 
-            if (TimeFromSuspend.TotalSeconds >= MainViewRunningState.MinutesLeft * 60 + MainViewRunningState.SecondsLeft)
+            if (TimeFromSuspend.TotalSeconds >= MainViewRunningState.SecondsLeft)
             {
                 MainViewRunningState.IsRunning = false;
-                MainViewRunningState.MinutesLeft = 0;
                 MainViewRunningState.SecondsLeft = 0;
                 return;
             }
 
-            if (TimeFromSuspend.Seconds > MainViewRunningState.SecondsLeft)
-            {
-                MainViewRunningState.MinutesLeft -= TimeFromSuspend.Minutes + 1;
-                MainViewRunningState.SecondsLeft = MainViewRunningState.SecondsLeft + 60 - TimeFromSuspend.Seconds;
-                return;
-            }
-
-            MainViewRunningState.MinutesLeft -= TimeFromSuspend.Minutes;
             MainViewRunningState.SecondsLeft -= TimeFromSuspend.Seconds;
-
         }
 
         private void OnResuming(object sender, Object e)
@@ -399,9 +372,8 @@ namespace PomoTime
         private void LoadRunningState()
         {
             ApplicationDataContainer localSettings = Windows.Storage.ApplicationData.Current.LocalSettings;
-            if (localSettings.Values["MinutesLeft"] != null)
+            if (localSettings.Values["SecondsLeft"] != null)
             {
-                MainViewRunningState.MinutesLeft = (int)localSettings.Values["MinutesLeft"];
                 MainViewRunningState.SecondsLeft = (int)localSettings.Values["SecondsLeft"];
                 MainViewRunningState.IsRunning = (bool)localSettings.Values["IsRunning"];
                 MainViewRunningState.PreviousShortBreaks = (int)localSettings.Values["PreviousShortBreaks"];
@@ -426,19 +398,16 @@ namespace PomoTime
                 switch (action)
                 {
                     case "5minutes":
-                        MainViewRunningState.MinutesLeft = 5;
-                        MainViewRunningState.SecondsLeft = 0;
+                        MainViewRunningState.SecondsLeft = 5 * 60;
                         MainViewRunningState.IsRunning = true;
                         break;
                     case "continue":
-                        MainViewRunningState.MinutesLeft = 0;
                         MainViewRunningState.SecondsLeft = 0;
                         // Onto the next period
                         PlusSecond();
                         MainViewRunningState.IsRunning = true;
                         break;
                     case "nothing":
-                        MainViewRunningState.MinutesLeft = 0;
                         MainViewRunningState.SecondsLeft = 0;
                         MainViewRunningState.IsRunning = false;
                         break;

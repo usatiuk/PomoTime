@@ -24,18 +24,6 @@ namespace PomoTime
 
         }
 
-        public int _minutes_left;
-        public int MinutesLeft
-        {
-            get { return _minutes_left; }
-            set
-            {
-                _minutes_left = value;
-                NotifyPropertyChanged("MinutesLeft");
-            }
-
-        }
-
         public int _seconds_left;
         public int SecondsLeft
         {
@@ -84,12 +72,5 @@ namespace PomoTime
                 NotifyPropertyChanged("PreviousShortBreaks");
             }
         }
-
-        public string CurrentPeriodName()
-        {
-            return CurrentPeriod.Name();
-        }
     }
-
-
 }

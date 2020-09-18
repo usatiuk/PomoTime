@@ -12,8 +12,9 @@
 
     <Page.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-        <converters:FormatStringConverter x:Key="FormatStringConverter" />
         <local:PeriodToStringConverter x:Key="PeriodToStringConverter" />
+        <local:SecondsLeftToMinutesConverter x:Key="SecondsLeftToMinutesConverter" />
+        <local:SecondsLeftToSecondsConverter x:Key="SecondsLeftToSecondsConverter" />
     </Page.Resources>
 
     <Grid>
@@ -42,7 +43,7 @@
                         x:Name="MinutesText"
                         FontSize="60"
                         FontWeight="Bold"
-                        Text="{x:Bind MainViewRunningState.MinutesLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
+                        Text="{x:Bind MainViewRunningState.SecondsLeft, Converter={StaticResource SecondsLeftToMinutesConverter}, Mode=OneWay}" />
                     <Run
                         x:Name="Separator"
                         FontSize="30"
@@ -52,7 +53,7 @@
                         x:Name="SecondsText"
                         FontSize="30"
                         FontWeight="SemiBold"
-                        Text="{x:Bind MainViewRunningState.SecondsLeft, Converter={StaticResource FormatStringConverter}, Mode=OneWay, ConverterParameter='00'}" />
+                        Text="{x:Bind MainViewRunningState.SecondsLeft, Converter={StaticResource SecondsLeftToSecondsConverter}, Mode=OneWay}" />
                 </Paragraph>
             </RichTextBlock>
             <TextBlock
