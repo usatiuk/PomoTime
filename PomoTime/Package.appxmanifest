@@ -9,9 +9,9 @@
   <Identity
     Name="44844StepanUsatyuk.PomoTime"
     Publisher="CN=D7EE55C2-4D4B-40F8-8EE5-CC4CEBCE2133"
-    Version="1.0.14.0" />
+    Version="1.0.15.0" />
 
-  <mp:PhoneIdentity PhoneProductId="5cd2f65c-5a82-4864-85b9-f4560076f8c8" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="b38f1a32-0283-4bff-847e-df5c6d8a14bf" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>PomoTime</DisplayName>
