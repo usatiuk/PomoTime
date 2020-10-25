@@ -117,7 +117,6 @@ namespace PomoTime
             {
                 MainViewRunningState.SecondsLeft--;
             }
-            SaveLocalState();
         }
         void TimerTick()
         {
@@ -126,6 +125,7 @@ namespace PomoTime
                 return;
             }
             PlusSecond();
+            SaveLocalState();
         }
 
         void SchedulePeriodOverNotification()
@@ -320,7 +320,7 @@ namespace PomoTime
                 return;
             }
 
-            MainViewRunningState.SecondsLeft -= TimeFromSuspend.Seconds;
+            MainViewRunningState.SecondsLeft -= (int) TimeFromSuspend.TotalSeconds;
         }
 
         private void OnResuming(object sender, Object e)
@@ -357,16 +357,19 @@ namespace PomoTime
         {
             StopTimer();
             StartTimer();
+            SaveLocalState();
         }
 
         private void MainPageLoaded(object sender, RoutedEventArgs e)
         {
             StartTimer();
+            SaveLocalState();
         }
 
         private void MainPageUnloaded(object sender, RoutedEventArgs e)
         {
             StopTimer();
+            SaveLocalState();
         }
 
         private void LoadRunningState()
