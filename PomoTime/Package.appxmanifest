@@ -9,7 +9,7 @@
   <Identity
     Name="44844StepanUsatyuk.PomoTime"
     Publisher="CN=D7EE55C2-4D4B-40F8-8EE5-CC4CEBCE2133"
-    Version="1.0.19.0" />
+    Version="1.0.20.0" />
 
   <mp:PhoneIdentity PhoneProductId="e52de974-37e6-4bd5-a60a-a9cc6f77350c" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
