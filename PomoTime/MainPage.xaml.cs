@@ -327,6 +327,7 @@ namespace PomoTime
         {
             FastForwardTime();
             SaveLocalState();
+            StartTimer();
         }
 
         private void StartTimer()
